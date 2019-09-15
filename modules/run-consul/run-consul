@@ -299,7 +299,7 @@ EOF
   fi
 
   local rpc_encryption_configuration=""
-  if [[ "$enable_rpc_encryption" == "true" && ! -z "$ca_path" && ! -z "$cert_file_path" && ! -z "$key_file_path" ]]; then
+  if [[ "$enable_rpc_encryption" == "true" && ! -z "$ca_path" ]]; then
     log_info "Creating RPC encryption configuration"
     rpc_encryption_configuration=$(cat <<EOF
 "verify_outgoing": true,
@@ -307,15 +307,20 @@ EOF
 "verify_incoming_https": false,
 "verify_server_hostname": true,
 "enable_agent_tls_for_checks": true,
-"ca_path": "$ca_path",
-"cert_file": "$cert_file_path",
-"key_file": "$key_file_path",
 "ports": {
   "https": 8501,
   "grpc": 8502
 },
+"ca_path": "$ca_path",
 EOF
 )
+    if [[ ! -z "$cert_file_path" && ! -z "$key_file_path" ]]; then
+        rpc_encryption_configuration+=$(cat <<EOF
+"cert_file": "$cert_file_path",
+"key_file": "$key_file_path",
+EOF
+)
+    fi
   fi
 
   local auto_encrypt_configuration=""
@@ -669,8 +674,10 @@ function run {
     fi
     if [[ "$enable_rpc_encryption" == "true" ]]; then
       assert_not_empty "--ca-path" "$ca_path"
-      assert_not_empty "--cert-file-path" "$cert_file_path"
-      assert_not_empty "--key_file_path" "$key_file_path"
+      if [[ "$enable_auto_encryption" != "true" || "$server" = true ]]; then
+          assert_not_empty "--cert-file-path" "$cert_file_path"
+          assert_not_empty "--key-file-path" "$key_file_path"
+      fi
     fi
 
     generate_consul_config "$server" \
