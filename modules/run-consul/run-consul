@@ -336,7 +336,6 @@ EOF
     else
       log_info "Creating RPC auto_encrypt configuration for client"
       auto_encrypt_configuration=$(cat <<EOF
-"ca_file": "$ca_path",
 "auto_encrypt": {
     "tls": true
 },
